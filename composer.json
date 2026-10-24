@@ -1,0 +1,40 @@
+{
+    "name": "finest/identity-client",
+    "description": "Finest identity for the platform's Laravel services: verify its access tokens, get a service's own token.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.5",
+        "firebase/php-jwt": "^7.2",
+        "illuminate/cache": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/support": "^13.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.27",
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Finest\\IdentityClient\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Finest\\IdentityClient\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Finest\\IdentityClient\\IdentityClientServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

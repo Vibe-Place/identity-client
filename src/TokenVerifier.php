@@ -42,9 +42,7 @@ final readonly class TokenVerifier
     private function keyId(string $token): ?string
     {
         try {
-            $header = explode('.', $token)[0]
-                |> JWT::urlsafeB64Decode(...)
-                |> JWT::jsonDecode(...);
+            $header = JWT::jsonDecode(JWT::urlsafeB64Decode(explode('.', $token)[0]));
         } catch (Throwable $exception) {
             throw new InvalidToken('The token is not a JWT.', previous: $exception);
         }

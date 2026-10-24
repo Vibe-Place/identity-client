@@ -29,7 +29,7 @@ class ServiceTokenTest extends TestCase
     {
         FakeIdentity::install();
 
-        (void) app(ServiceToken::class)->for('geo');
+        app(ServiceToken::class)->for('geo');
 
         $this->assertSame('service-token-2', app(ServiceToken::class)->for('geo', fresh: true));
         $this->assertSame('service-token-2', app(ServiceToken::class)->for('geo'));
@@ -41,6 +41,6 @@ class ServiceTokenTest extends TestCase
         Http::fake(['identity.test/oauth/token' => Http::response(['error' => 'invalid_client'], 401)]);
 
         $this->expectException(ConnectionException::class);
-        (void) app(ServiceToken::class)->for('geo');
+        app(ServiceToken::class)->for('geo');
     }
 }

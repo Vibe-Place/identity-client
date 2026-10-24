@@ -19,7 +19,6 @@ final readonly class ServiceToken
      * @throws ConnectionException when identity issues none: to the caller,
      *                             the service it wanted is out of reach
      */
-    #[\NoDiscard]
     public function for(string $scope, bool $fresh = false): string
     {
         $key = "identity-client.service-token.{$scope}";

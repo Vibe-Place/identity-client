@@ -16,12 +16,17 @@ What every Laravel service of the Finest platform needs, in one package:
     service's handlers (`platform.events.handlers`, subject => list of `Handler` classes)
     through its durable consumer; each event is handled once, in a transaction with the note
     that it was (`handled_events`).
+- **People and integration keys** (`Finest\Platform\Identity\ActorGuard`, the `platform` auth
+  driver): an identity token for an organization; access by the products the service serves
+  (`platform.identity.products`). Middleware `Http\EnsureAccess` (403 without access) and
+  `Http\ScopeToOrganization` (put it before route model binding).
 - **Organizations kept apart** (`Finest\Platform\Tenancy`): `CurrentOrganization` (identity's
   organization id, one per request or job), the `BelongsToOrganization` model trait, the
   `Owned` validation rule.
 - **Prefixed public ids** (`Finest\Platform\Ids\HasPrefixedId`): `ID_PREFIX = 'prd'` → `prd_01k…`.
 - **For tests** (`Finest\Platform\Testing`): `FakeIdentity` (keys, tokens, a service token
-  endpoint), `InteractsWithEvents` (`assertEventRecorded`, `deliverEvent`).
+  endpoint), `ActsAsMember` (`actingAsMember()`), `InteractsWithEvents` (`assertEventRecorded`,
+  `deliverEvent`).
 
 ## Install
 

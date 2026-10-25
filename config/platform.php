@@ -12,6 +12,10 @@ return [
 
         // Seconds a token's times may be off: clocks of servers drift.
         'leeway' => 10,
+
+        // People and integration keys get in with any of these products (the `platform`
+        // auth driver): ['warehouse'], or ['warehouse', 'shop'] for a shared service.
+        'products' => [],
     ],
 
     /*

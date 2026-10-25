@@ -1,6 +1,6 @@
 <?php
 
-namespace Finest\IdentityClient;
+namespace Finest\Platform\Identity;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
@@ -21,7 +21,7 @@ final readonly class ServiceToken
      */
     public function for(string $scope, bool $fresh = false): string
     {
-        $key = "identity-client.service-token.{$scope}";
+        $key = "platform.identity.service-token.{$scope}";
         if ($fresh) {
             Cache::forget($key);
         }
@@ -31,11 +31,11 @@ final readonly class ServiceToken
             return $token;
         }
 
-        $response = Http::baseUrl(rtrim(config('identity-client.url'), '/'))->acceptJson()->asForm()->timeout(5)
+        $response = Http::baseUrl(rtrim(config('platform.identity.url'), '/'))->acceptJson()->asForm()->timeout(5)
             ->post('oauth/token', [
                 'grant_type' => 'client_credentials',
-                'client_id' => config('identity-client.client_id'),
-                'client_secret' => config('identity-client.client_secret'),
+                'client_id' => config('platform.identity.client_id'),
+                'client_secret' => config('platform.identity.client_secret'),
                 'scope' => $scope,
             ]);
         if ($response->failed()) {

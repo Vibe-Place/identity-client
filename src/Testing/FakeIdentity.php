@@ -1,6 +1,6 @@
 <?php
 
-namespace Finest\IdentityClient\Testing;
+namespace Finest\Platform\Testing;
 
 use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\Http;
@@ -31,9 +31,9 @@ final class FakeIdentity
         $identity = new self;
 
         config([
-            'identity-client.url' => self::URL,
-            'identity-client.client_id' => 'service-client-id',
-            'identity-client.client_secret' => 'service-secret',
+            'platform.identity.url' => self::URL,
+            'platform.identity.client_id' => 'service-client-id',
+            'platform.identity.client_secret' => 'service-secret',
         ]);
         Http::fake([
             'identity.test/.well-known/jwks.json' => fn () => Http::response(['keys' => $identity->published]),

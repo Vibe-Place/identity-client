@@ -1,6 +1,6 @@
 <?php
 
-namespace Finest\IdentityClient;
+namespace Finest\Platform\Identity;
 
 use Firebase\JWT\JWT;
 use Throwable;
@@ -29,7 +29,7 @@ final readonly class TokenVerifier
             $keys = $this->keys->all(refresh: true);
         }
 
-        JWT::$leeway = (int) config('identity-client.leeway');
+        JWT::$leeway = (int) config('platform.identity.leeway');
 
         try {
             return JWT::decode($token, $keys);

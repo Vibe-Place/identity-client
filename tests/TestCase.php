@@ -1,19 +1,23 @@
 <?php
 
-namespace Finest\IdentityClient\Tests;
+namespace Finest\Platform\Tests;
 
-use Finest\IdentityClient\IdentityClientServiceProvider;
+use Finest\Platform\PlatformServiceProvider;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
+    use RefreshDatabase;
+
     protected function getPackageProviders($app): array
     {
-        return [IdentityClientServiceProvider::class];
+        return [PlatformServiceProvider::class];
     }
 
     protected function defineEnvironment($app): void
     {
         $app['config']->set('cache.default', 'array');
+        $app['config']->set('database.default', 'testing');
     }
 }

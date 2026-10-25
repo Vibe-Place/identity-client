@@ -1,10 +1,10 @@
 <?php
 
-namespace Finest\IdentityClient\Tests;
+namespace Finest\Platform\Tests;
 
-use Finest\IdentityClient\InvalidToken;
-use Finest\IdentityClient\Testing\FakeIdentity;
-use Finest\IdentityClient\TokenVerifier;
+use Finest\Platform\Identity\InvalidToken;
+use Finest\Platform\Identity\TokenVerifier;
+use Finest\Platform\Testing\FakeIdentity;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 

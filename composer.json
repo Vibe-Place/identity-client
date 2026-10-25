@@ -1,12 +1,15 @@
 {
-    "name": "finest/identity-client",
-    "description": "Finest identity for the platform's Laravel services: verify its access tokens, get a service's own token.",
+    "name": "finest/platform-client",
+    "description": "What every Laravel service of the Finest platform needs: identity's tokens, events through an outbox to NATS and back, organizations kept apart, prefixed public ids.",
     "type": "library",
     "license": "MIT",
     "require": {
         "php": "^8.5",
+        "basis-company/nats": "^1.2",
         "firebase/php-jwt": "^7.2",
         "illuminate/cache": "^13.0",
+        "illuminate/console": "^13.0",
+        "illuminate/database": "^13.0",
         "illuminate/http": "^13.0",
         "illuminate/support": "^13.0"
     },
@@ -17,18 +20,18 @@
     },
     "autoload": {
         "psr-4": {
-            "Finest\\IdentityClient\\": "src/"
+            "Finest\\Platform\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Finest\\IdentityClient\\Tests\\": "tests/"
+            "Finest\\Platform\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Finest\\IdentityClient\\IdentityClientServiceProvider"
+                "Finest\\Platform\\PlatformServiceProvider"
             ]
         }
     },

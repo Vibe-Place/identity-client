@@ -1,9 +1,9 @@
 <?php
 
-namespace Finest\IdentityClient\Tests;
+namespace Finest\Platform\Tests;
 
-use Finest\IdentityClient\ServiceToken;
-use Finest\IdentityClient\Testing\FakeIdentity;
+use Finest\Platform\Identity\ServiceToken;
+use Finest\Platform\Testing\FakeIdentity;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -37,7 +37,7 @@ class ServiceTokenTest extends TestCase
 
     public function test_without_a_token_from_identity_the_service_is_out_of_reach(): void
     {
-        config(['identity-client.url' => FakeIdentity::URL]);
+        config(['platform.identity.url' => FakeIdentity::URL]);
         Http::fake(['identity.test/oauth/token' => Http::response(['error' => 'invalid_client'], 401)]);
 
         $this->expectException(ConnectionException::class);

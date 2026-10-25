@@ -1,6 +1,6 @@
 <?php
 
-namespace Finest\IdentityClient;
+namespace Finest\Platform\Identity;
 
 use RuntimeException;
 

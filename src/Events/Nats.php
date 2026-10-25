@@ -30,7 +30,9 @@ final class Nats
 
     /**
      * This service's durable consumer of the given subjects: it starts at the
-     * first event of the stream and goes on from where it stopped.
+     * first event of the stream and goes on from where it stopped. Its subjects
+     * follow the handlers: one added later gets the events from then on, not the
+     * ones the consumer has passed.
      *
      * @param  list<string>  $subjects  without the prefix
      */
@@ -42,6 +44,13 @@ final class Nats
             ->setDeliverPolicy(DeliverPolicy::ALL)
             ->setAckPolicy(AckPolicy::EXPLICIT)
             ->setMaxDeliver(10);
+
+        // Created, or updated when the subjects changed: the client only creates a
+        // missing one, the server's create also updates an existing one.
+        $this->client()->api(
+            'CONSUMER.DURABLE.CREATE.'.config('platform.events.stream').'.'.$name,
+            $consumer->getConfiguration()->toArray(),
+        );
 
         return $consumer->create();
     }

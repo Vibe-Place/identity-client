@@ -47,6 +47,31 @@ class NatsTest extends TestCase
         $this->assertSame(['prd_1', 'prd_2'], RecordingHandler::$handled);
     }
 
+    public function test_a_handler_added_later_gets_the_events_from_then_on(): void
+    {
+        $url = parse_url(config('platform.nats.url'));
+        if (! @fsockopen($url['host'], $url['port'] ?? 4222, timeout: 1)) {
+            $this->markTestSkipped('No NATS at '.config('platform.nats.url'));
+        }
+        RecordingHandler::$handled = [];
+
+        DB::transaction(fn () => app(Outbox::class)->record('catalog.product.saved', ['id' => 'prd_1']));
+        app(Relay::class)->publishPending();
+        $this->artisan('events:consume', ['--once' => true])->assertSuccessful();
+
+        // A new version of the service handles one more subject: the existing durable
+        // consumer takes it on.
+        config(['platform.events.handlers' => [
+            'catalog.product.saved' => [RecordingHandler::class],
+            'logistics.place.saved' => [RecordingHandler::class],
+        ]]);
+        DB::transaction(fn () => app(Outbox::class)->record('logistics.place.saved', ['id' => 'loc_1']));
+        app(Relay::class)->publishPending();
+        $this->artisan('events:consume', ['--once' => true])->assertSuccessful();
+
+        $this->assertSame(['prd_1', 'loc_1'], RecordingHandler::$handled);
+    }
+
     protected function tearDown(): void
     {
         try {

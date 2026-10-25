@@ -32,12 +32,14 @@ class ConsumeCommand extends Command
             return self::SUCCESS;
         }
 
-        // A long poll, one event at a time: NATS hands an event over the moment it
-        // arrives, instead of after the wait for a fuller batch.
+        // Running: a long poll, one event at a time — NATS hands an event over the
+        // moment it arrives, instead of after the wait for a fuller batch. Once: what
+        // is waiting, in one batch.
+        $once = $this->option('once');
         $nats->consumer(config('platform.events.consumer'), $subjects)
-            ->setBatching(1)
-            ->setExpires(4)
-            ->setIterations($this->option('once') ? 1 : PHP_INT_MAX)
+            ->setBatching($once ? 1000 : 1)
+            ->setExpires($once ? 1 : 4)
+            ->setIterations($once ? 1 : PHP_INT_MAX)
             ->handle(function (Payload $payload) use ($dispatcher) {
                 $dispatcher->dispatch(Event::fromArray(json_decode($payload->body, true, flags: JSON_THROW_ON_ERROR)));
             });

@@ -8,6 +8,7 @@ use Finest\Platform\Tenancy\CurrentOrganization;
 use Finest\Platform\Tenancy\NoCurrentOrganization;
 use Finest\Platform\Tenancy\Owned;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -22,6 +23,7 @@ class TenancyTest extends TestCase
             $table->string('id', 30)->primary();
             $table->string('organization_id');
             $table->string('name');
+            $table->timestampTz('deleted_at')->nullable();
         });
     }
 
@@ -40,6 +42,17 @@ class TenancyTest extends TestCase
         $this->assertTrue(Validator::make(['id' => $ours->id], ['id' => [new Owned(Thing::class)]])->fails());
     }
 
+    public function test_a_deleted_record_is_owned_only_when_kept(): void
+    {
+        app(CurrentOrganization::class)->set('org-a');
+        $deleted = Thing::create(['name' => 'gone']);
+        $deleted->delete();
+        $owned = fn (array $kept) => Validator::make(['id' => $deleted->id], ['id' => [new Owned(Thing::class, $kept)]])->passes();
+
+        $this->assertFalse($owned([]));
+        $this->assertTrue($owned([$deleted->id]));
+    }
+
     public function test_without_a_current_organization_nothing_is_read(): void
     {
         $this->expectException(NoCurrentOrganization::class);
@@ -50,7 +63,7 @@ class TenancyTest extends TestCase
 
 class Thing extends Model
 {
-    use BelongsToOrganization, HasPrefixedId;
+    use BelongsToOrganization, HasPrefixedId, SoftDeletes;
 
     public const ID_PREFIX = 'thg';
 

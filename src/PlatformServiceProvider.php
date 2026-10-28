@@ -4,6 +4,7 @@ namespace Finest\Platform;
 
 use Finest\Platform\Console\ConsumeCommand;
 use Finest\Platform\Console\RelayCommand;
+use Finest\Platform\Console\RetryCommand;
 use Finest\Platform\Events\Nats;
 use Finest\Platform\Identity\ActorGuard;
 use Finest\Platform\Tenancy\CurrentOrganization;
@@ -29,7 +30,7 @@ class PlatformServiceProvider extends ServiceProvider
         Auth::viaRequest('platform', fn ($request) => $this->app->make(ActorGuard::class)($request));
 
         if ($this->app->runningInConsole()) {
-            $this->commands([RelayCommand::class, ConsumeCommand::class]);
+            $this->commands([RelayCommand::class, ConsumeCommand::class, RetryCommand::class]);
             $this->publishes([__DIR__.'/../config/platform.php' => config_path('platform.php')], 'platform-config');
         }
     }

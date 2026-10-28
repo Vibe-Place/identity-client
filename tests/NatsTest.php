@@ -31,7 +31,6 @@ class NatsTest extends TestCase
     public function test_an_event_goes_from_the_outbox_through_nats_to_a_handler(): void
     {
         $this->requireNats();
-        RecordingHandler::$handled = [];
 
         DB::transaction(fn () => app(Outbox::class)->record('catalog.product.saved', ['id' => 'prd_1']));
         DB::transaction(fn () => app(Outbox::class)->record('catalog.product.saved', ['id' => 'prd_2']));
@@ -49,7 +48,6 @@ class NatsTest extends TestCase
     public function test_a_handler_added_later_gets_the_events_from_then_on(): void
     {
         $this->requireNats();
-        RecordingHandler::$handled = [];
 
         DB::transaction(fn () => app(Outbox::class)->record('catalog.product.saved', ['id' => 'prd_1']));
         app(Relay::class)->publishPending();
@@ -66,6 +64,28 @@ class NatsTest extends TestCase
         $this->artisan('events:consume', ['--once' => true])->assertSuccessful();
 
         $this->assertSame(['prd_1', 'loc_1'], RecordingHandler::$handled);
+    }
+
+    public function test_an_event_a_handler_fails_on_is_kept_and_the_consumer_goes_on(): void
+    {
+        $this->requireNats();
+        RecordingHandler::$failOn = ['prd_1'];
+
+        $failing = DB::transaction(fn () => app(Outbox::class)->record('catalog.product.saved', ['id' => 'prd_1']));
+        DB::transaction(fn () => app(Outbox::class)->record('catalog.product.saved', ['id' => 'prd_2']));
+        app(Relay::class)->publishPending();
+        $this->artisan('events:consume', ['--once' => true])->assertSuccessful();
+
+        $this->assertSame(['prd_2'], RecordingHandler::$handled);
+        $this->assertSame([$failing->id], DB::table('failed_events')->pluck('id')->all());
+
+        // Acked: it does not come again.
+        $this->artisan('events:consume', ['--once' => true])->assertSuccessful();
+        $this->assertSame(['prd_2'], RecordingHandler::$handled);
+
+        RecordingHandler::$failOn = [];
+        $this->artisan('events:retry')->assertSuccessful();
+        $this->assertSame(['prd_2', 'prd_1'], RecordingHandler::$handled);
     }
 
     public function test_the_stream_keeps_events_for_30_days_and_drops_repeats_within_2_minutes(): void

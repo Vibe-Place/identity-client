@@ -2,8 +2,6 @@
 
 namespace Finest\Platform\Tests;
 
-use Finest\Platform\Events\Event;
-use Finest\Platform\Events\Handler;
 use Finest\Platform\Events\Outbox;
 use Finest\Platform\Testing\InteractsWithEvents;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +30,6 @@ class OutboxAndHandlersTest extends TestCase
 
     public function test_an_event_is_handled_once_however_often_it_comes(): void
     {
-        RecordingHandler::$handled = [];
         config(['platform.events.handlers' => ['catalog.product.saved' => [RecordingHandler::class]]]);
 
         $event = $this->deliverEvent('catalog.product.saved', ['id' => 'prd_1']);
@@ -44,35 +41,16 @@ class OutboxAndHandlersTest extends TestCase
 
     public function test_a_failed_handler_leaves_the_event_to_come_again(): void
     {
-        RecordingHandler::$handled = [];
-        config(['platform.events.handlers' => ['catalog.product.saved' => [FailingHandler::class]]]);
+        RecordingHandler::$failOn = ['prd_1'];
+        config(['platform.events.handlers' => ['catalog.product.saved' => [RecordingHandler::class]]]);
 
         try {
             $this->deliverEvent('catalog.product.saved', ['id' => 'prd_1'], id: '01k0000000000000000000000a');
         } catch (RuntimeException) {
         }
 
-        config(['platform.events.handlers' => ['catalog.product.saved' => [RecordingHandler::class]]]);
+        RecordingHandler::$failOn = [];
         $this->deliverEvent('catalog.product.saved', ['id' => 'prd_1'], id: '01k0000000000000000000000a');
         $this->assertSame(['prd_1'], RecordingHandler::$handled);
-    }
-}
-
-class RecordingHandler implements Handler
-{
-    /** @var list<string> */
-    public static array $handled = [];
-
-    public function handle(Event $event): void
-    {
-        self::$handled[] = $event->data['id'];
-    }
-}
-
-class FailingHandler implements Handler
-{
-    public function handle(Event $event): void
-    {
-        throw new RuntimeException('cannot handle');
     }
 }

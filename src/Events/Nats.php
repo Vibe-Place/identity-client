@@ -51,7 +51,9 @@ final class Nats
             ->setSubjectFilters(array_map($this->subject(...), $subjects))
             ->setDeliverPolicy(DeliverPolicy::ALL)
             ->setAckPolicy(AckPolicy::EXPLICIT)
-            ->setMaxDeliver(10);
+            // Redelivered only when the consumer died before the ack (a failing handler's
+            // event is kept in failed_events and acked): never given up on.
+            ->setMaxDeliver(-1);
 
         // Created, or updated when the subjects changed: the client only creates a
         // missing one, the server's create also updates an existing one.

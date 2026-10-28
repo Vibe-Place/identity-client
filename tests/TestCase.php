@@ -10,6 +10,14 @@ abstract class TestCase extends BaseTestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        RecordingHandler::$handled = [];
+        RecordingHandler::$failOn = [];
+    }
+
     protected function getPackageProviders($app): array
     {
         return [PlatformServiceProvider::class];

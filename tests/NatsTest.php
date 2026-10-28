@@ -2,6 +2,8 @@
 
 namespace Finest\Platform\Tests;
 
+use Basis\Nats\Client;
+use Basis\Nats\Configuration;
 use Finest\Platform\Events\Nats;
 use Finest\Platform\Events\Outbox;
 use Finest\Platform\Events\Relay;
@@ -28,10 +30,7 @@ class NatsTest extends TestCase
 
     public function test_an_event_goes_from_the_outbox_through_nats_to_a_handler(): void
     {
-        $url = parse_url(config('platform.nats.url'));
-        if (! @fsockopen($url['host'], $url['port'] ?? 4222, timeout: 1)) {
-            $this->markTestSkipped('No NATS at '.config('platform.nats.url'));
-        }
+        $this->requireNats();
         RecordingHandler::$handled = [];
 
         DB::transaction(fn () => app(Outbox::class)->record('catalog.product.saved', ['id' => 'prd_1']));
@@ -49,10 +48,7 @@ class NatsTest extends TestCase
 
     public function test_a_handler_added_later_gets_the_events_from_then_on(): void
     {
-        $url = parse_url(config('platform.nats.url'));
-        if (! @fsockopen($url['host'], $url['port'] ?? 4222, timeout: 1)) {
-            $this->markTestSkipped('No NATS at '.config('platform.nats.url'));
-        }
+        $this->requireNats();
         RecordingHandler::$handled = [];
 
         DB::transaction(fn () => app(Outbox::class)->record('catalog.product.saved', ['id' => 'prd_1']));
@@ -70,6 +66,32 @@ class NatsTest extends TestCase
         $this->artisan('events:consume', ['--once' => true])->assertSuccessful();
 
         $this->assertSame(['prd_1', 'loc_1'], RecordingHandler::$handled);
+    }
+
+    public function test_the_stream_keeps_events_for_30_days_and_drops_repeats_within_2_minutes(): void
+    {
+        $this->requireNats();
+        // A stream made before these limits, as on a running platform.
+        $url = parse_url(config('platform.nats.url'));
+        $stream = (new Client(new Configuration(host: $url['host'], port: $url['port'] ?? 4222)))
+            ->getApi()->getStream(config('platform.events.stream'));
+        $stream->getConfiguration()->setSubjects([config('platform.events.prefix').'.>']);
+        $stream->create();
+
+        DB::transaction(fn () => app(Outbox::class)->record('catalog.product.saved', ['id' => 'prd_1']));
+        app(Relay::class)->publishPending();
+
+        $config = $stream->info()->getValues()->config;
+        $this->assertSame(30 * 86_400 * 1_000_000_000, $config->max_age);
+        $this->assertSame(120 * 1_000_000_000, $config->duplicate_window);
+    }
+
+    private function requireNats(): void
+    {
+        $url = parse_url(config('platform.nats.url'));
+        if (! @fsockopen($url['host'], $url['port'] ?? 4222, timeout: 1)) {
+            $this->markTestSkipped('No NATS at '.config('platform.nats.url'));
+        }
     }
 
     protected function tearDown(): void

@@ -13,12 +13,20 @@ use Basis\Nats\Stream\Stream;
 
 /**
  * The platform's events in NATS JetStream: one stream (`FINEST`, subjects
- * `finest.>`), kept on disk. Publishing waits for JetStream to store the
- * event; its id is the message id, so a repeated publish is stored once.
+ * `finest.>`), kept on disk for 30 days. Publishing waits for JetStream to
+ * store the event; its id is the message id, so a repeated publish within two
+ * minutes is stored once.
  */
 final class Nats
 {
+    private const int KEEP_DAYS = 30;
+
+    private const int DUPLICATES_WINDOW_SECONDS = 120;
+
     private ?Client $client = null;
+
+    /** The stream, once this process made sure it exists. */
+    private ?Stream $stream = null;
 
     public function publish(Event $event): void
     {
@@ -59,16 +67,30 @@ final class Nats
     public function deleteStream(): void
     {
         $this->stream()->delete();
+        $this->stream = null;
     }
 
+    /**
+     * The stream, created or brought to this configuration once per process:
+     * not a round trip to the server on every publish.
+     */
     private function stream(): Stream
     {
-        $stream = $this->client()->getApi()->getStream(config('platform.events.stream'));
-        $stream->getConfiguration()
-            ->setSubjects([config('platform.events.prefix').'.>'])
-            ->setStorageBackend(StorageBackend::FILE);
+        if ($this->stream === null) {
+            $stream = $this->client()->getApi()->getStream(config('platform.events.stream'));
+            $exists = $stream->exists();
+            $stream->getConfiguration()
+                ->setSubjects([config('platform.events.prefix').'.>'])
+                ->setStorageBackend(StorageBackend::FILE)
+                ->setMaxAge(self::KEEP_DAYS * 86_400 * 1_000_000_000)
+                ->setDuplicateWindow(self::DUPLICATES_WINDOW_SECONDS);
+            // An existing stream takes on the limits too: one made before them had none.
+            $exists ? $stream->update() : $stream->create();
 
-        return $stream->createIfNotExists();
+            $this->stream = $stream;
+        }
+
+        return $this->stream;
     }
 
     private function client(): Client

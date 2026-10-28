@@ -20,6 +20,9 @@ final class FakeIdentity
     /** Service tokens issued so far. */
     public private(set) int $issued = 0;
 
+    /** False: identity answers 503, as when it is down. */
+    public bool $up = true;
+
     /** @var array<string, string> private keys in PEM, by kid */
     private array $keys = [];
 
@@ -36,7 +39,9 @@ final class FakeIdentity
             'platform.identity.client_secret' => 'service-secret',
         ]);
         Http::fake([
-            'identity.test/.well-known/jwks.json' => fn () => Http::response(['keys' => $identity->published]),
+            'identity.test/.well-known/jwks.json' => fn () => $identity->up
+                ? Http::response(['keys' => $identity->published])
+                : Http::response(status: 503),
             'identity.test/oauth/token' => fn () => Http::response([
                 'token_type' => 'Bearer',
                 'expires_in' => 3600,

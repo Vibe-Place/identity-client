@@ -6,7 +6,8 @@ return [
         // Identity issues the access tokens; its public keys (JWKS) verify them.
         'url' => env('IDENTITY_URL', 'http://identity'),
 
-        // This service as a client of identity, for its own tokens (client credentials).
+        // This service as a client of identity, for its own tokens (ServiceToken, client
+        // credentials). Not needed now: the services do not call each other.
         'client_id' => env('IDENTITY_CLIENT_ID'),
         'client_secret' => env('IDENTITY_CLIENT_SECRET'),
 

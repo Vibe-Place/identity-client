@@ -9,7 +9,8 @@ use Throwable;
  * The `platform` auth driver: a person's or an integration key's identity token
  * for an organization. Access comes from the products this service serves
  * (`platform.identity.products`): the organization uses one of them, and the
- * person has a role in it or the key has its scope.
+ * person has a role in it or the key has its scope. The actor also knows every
+ * product it may use, for routes of one product (`EnsureAccess:logistics`).
  */
 final readonly class ActorGuard
 {
@@ -30,13 +31,12 @@ final readonly class ActorGuard
         $roles = (array) ($claims->roles ?? []);
         // An integration key's token is issued to the key itself: sub = aud.
         $integration = $claims->sub === ($claims->aud ?? null);
-        $hasAccess = false;
-        foreach (config('platform.identity.products') as $product) {
-            $uses = in_array($product, $claims->products ?? [], true);
-            $may = $integration ? in_array($product, $claims->scopes ?? [], true) : isset($roles[$product]);
-            $hasAccess = $hasAccess || ($uses && $may);
-        }
+        $products = array_values(array_filter(
+            (array) ($claims->products ?? []),
+            fn (string $product) => $integration ? in_array($product, (array) ($claims->scopes ?? []), true) : isset($roles[$product]),
+        ));
+        $hasAccess = array_intersect(config('platform.identity.products'), $products) !== [];
 
-        return new Actor($claims->sub, $claims->org, $roles, $integration, $hasAccess);
+        return new Actor($claims->sub, $claims->org, $roles, $integration, $hasAccess, $products);
     }
 }

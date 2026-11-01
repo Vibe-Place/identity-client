@@ -25,8 +25,10 @@ What every Laravel service of the Finest platform needs, in one package:
     newer data.
 - **People and integration keys** (`Finest\Platform\Identity\ActorGuard`, the `platform` auth
   driver): an identity token for an organization; access by the products the service serves
-  (`platform.identity.products`). Middleware `Http\EnsureAccess` (403 without access) and
-  `Http\ScopeToOrganization` (put it before route model binding).
+  (`platform.identity.products`). Middleware `Http\EnsureAccess` (403 without access; with
+  products, `EnsureAccess:warehouse,shop`, only for those who may use one of them —
+  `Actor::$products`, `Actor::mayUse()`) and `Http\ScopeToOrganization` (put it before route
+  model binding).
 - **Organizations kept apart** (`Finest\Platform\Tenancy`): `CurrentOrganization` (identity's
   organization id, one per request or job), the `BelongsToOrganization` model trait, the
   `Owned` validation rule.

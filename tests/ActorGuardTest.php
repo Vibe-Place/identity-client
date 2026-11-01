@@ -55,6 +55,33 @@ class ActorGuardTest extends TestCase
         $this->flushHeaders()->getJson('/whoami')->assertUnauthorized();
     }
 
+    public function test_routes_of_one_product_let_in_only_those_who_may_use_it(): void
+    {
+        config(['platform.identity.products' => ['logistics', 'warehouse', 'shop']]);
+        Route::middleware(['auth:platform', EnsureAccess::class.':warehouse,shop'])->get('/stock', fn () => 'ok');
+        Route::middleware(['auth:platform', EnsureAccess::class.':logistics'])->get('/trips', fn () => 'ok');
+
+        $storekeeper = ['products' => ['logistics', 'warehouse'], 'roles' => ['warehouse' => 'storekeeper']];
+        $this->visit('/stock', $storekeeper)->assertOk();
+        // The organization uses logistics, but the person has no role in it.
+        $this->visit('/trips', $storekeeper)->assertForbidden();
+        // A role in logistics, but the organization does not use it.
+        $this->visit('/trips', ['products' => ['warehouse'], 'roles' => ['logistics' => 'admin', 'warehouse' => 'admin']])->assertForbidden();
+
+        $key = ['sub' => 'key-1', 'aud' => 'key-1', 'products' => ['logistics', 'shop'], 'scopes' => ['logistics']];
+        $this->visit('/trips', $key)->assertOk();
+        $this->visit('/stock', $key)->assertForbidden();
+    }
+
+    /** @param  array<string, mixed>  $claims */
+    private function visit(string $path, array $claims): TestResponse
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->withToken($this->identity->token(['sub' => 'person-1', 'aud' => 'cabinet', 'org' => 'org-1', ...$claims]))
+            ->getJson($path);
+    }
+
     /** @param  array<string, mixed>  $claims */
     private function whoami(string $organization, array $claims): TestResponse
     {

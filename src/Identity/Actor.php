@@ -16,6 +16,8 @@ final readonly class Actor implements Authenticatable
      * @param  array<string, string>  $roles  the person's role in each product; none for a key
      * @param  bool  $hasAccess  the organization uses a product this service serves, and the
      *                           person has a role in it or the key has its scope
+     * @param  list<string>  $products  every product it may use: the organization uses it, and
+     *                                  the person has a role in it or the key has its scope
      */
     public function __construct(
         public string $id,
@@ -23,7 +25,14 @@ final readonly class Actor implements Authenticatable
         public array $roles = [],
         public bool $integration = false,
         public bool $hasAccess = true,
+        public array $products = [],
     ) {}
+
+    /** Whether it may use any of the products. */
+    public function mayUse(string ...$products): bool
+    {
+        return array_intersect($products, $this->products) !== [];
+    }
 
     public function role(string $product): ?string
     {

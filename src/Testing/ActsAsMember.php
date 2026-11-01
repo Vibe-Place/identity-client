@@ -22,6 +22,7 @@ trait ActsAsMember
             id: Str::lower((string) Str::ulid()),
             organizationId: $organizationId,
             roles: array_fill_keys($products, 'admin'),
+            products: $products,
         ), 'platform');
 
         return $organizationId;
